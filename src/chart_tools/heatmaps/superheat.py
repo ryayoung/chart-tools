@@ -3,10 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-
-def superheat(corr, title=None, size=13, masked=True, **kwargs):
-    marker = kwargs.get('marker', 's')
-
+def superheat(
+        corr, title=None, mark_scale=5, size=13, masked=True, cbar=True,
+        grid=True, palette=None, marker='s', bar_ticks=5, n_colors=128, **kwargs
+    ):
     # Data
     dfc = corr.copy()
     dfc = dfc.reindex(sorted(dfc.columns), axis=1)
@@ -30,8 +30,11 @@ def superheat(corr, title=None, size=13, masked=True, **kwargs):
     ax.set_title(title)
 
     # Color
-    n_colors = 256
-    palette = sns.diverging_palette(20, 220, n=n_colors)
+    if palette == None:
+        palette = sns.diverging_palette(20, 220, n=n_colors)
+    else:
+        n_colors = len(palette)
+    
     color_min, color_max = [-1, 1]
     def value_to_color(val):
         val_position = float((val - color_min)) / (color_max - color_min) # position of value in the input range, relative to the length of the input range
@@ -47,14 +50,14 @@ def superheat(corr, title=None, size=13, masked=True, **kwargs):
     ymap = y.map(y_to_num)
     
     # Draw
-    size_scale = 500
+    size_scale = mark_scale * 100
     ax.scatter(
+        x=kwargs.pop('x', xmap),
+        y=kwargs.pop('y', ymap),
+        s=kwargs.pop('s', (size * size_scale)), # Vector of square sizes, proportional to size parameter
+        c=kwargs.pop('c', (dfc['value'].apply(value_to_color))),
+        marker=marker, # Use square as scatterplot marker
         **kwargs,
-        x=xmap,
-        y=ymap,
-        s=size * size_scale, # Vector of square sizes, proportional to size parameter
-        c=dfc['value'].apply(value_to_color),
-        marker=marker# Use square as scatterplot marker
     )
     
     # Show column labels on the axes
@@ -63,30 +66,37 @@ def superheat(corr, title=None, size=13, masked=True, **kwargs):
     ax.set_yticks([y_to_num[v] for v in y_labels])
     ax.set_yticklabels(y_labels)
     ax.grid(False, 'major')
-    ax.grid(True, 'minor')
+
+    if grid == True:
+        ax.grid(True, 'minor')
+
     ax.set_xticks([t + 0.5 for t in ax.get_xticks()], minor=True)
     ax.set_yticks([t + 0.5 for t in ax.get_yticks()], minor=True)
     ax.set_xlim([-0.5, max([v for v in x_to_num.values()]) + 0.5])
     ax.set_ylim([-0.5, max([v for v in y_to_num.values()]) + 0.5])
     ax.invert_xaxis()
-    # Color Bar
-    ax = plt.subplot(plot_grid[:,-1])
 
-    col_x = [1]*len(palette)
-    bar_y = np.linspace(color_min, color_max, n_colors)
+    # Color Bar
+    if cbar == True:
+        axb = plt.subplot(plot_grid[:,-1])
+
+        col_x = [1]*len(palette)
+        bar_y = np.linspace(color_min, color_max, n_colors)
+        
+        bar_height = bar_y[1] - bar_y[0]
+        axb.barh(
+            y=bar_y,
+            width=[2]*len(palette), # make bars 5 units wide
+            left=col_x, # Make bars start at 0
+            height=bar_height,
+            color=palette,
+            linewidth=0
+        )
+        axb.set_xlim(1, 2) # Bars are going from 0 to 5, so lets crop the plot somewhere in the middle
+        axb.grid(False) # Hide grid
+        axb.set_facecolor('white') # Make background white
+        axb.set_xticks([]) # Remove horizontal ticks
+        axb.set_yticks(np.linspace(min(bar_y), max(bar_y), bar_ticks)) # Show vertical ticks for min, middle and max
+        axb.yaxis.tick_right() # Show vertical ticks on the right
     
-    bar_height = bar_y[1] - bar_y[0]
-    ax.barh(
-        y=bar_y,
-        width=[2]*len(palette), # make bars 5 units wide
-        left=col_x, # Make bars start at 0
-        height=bar_height,
-        color=palette,
-        linewidth=0
-    )
-    ax.set_xlim(1, 2) # Bars are going from 0 to 5, so lets crop the plot somewhere in the middle
-    ax.grid(False) # Hide grid
-    ax.set_facecolor('white') # Make background white
-    ax.set_xticks([]) # Remove horizontal ticks
-    ax.set_yticks(np.linspace(min(bar_y), max(bar_y), 5)) # Show vertical ticks for min, middle and max
-    ax.yaxis.tick_right() # Show vertical ticks on the right
+    return (fig, ax, axb)
