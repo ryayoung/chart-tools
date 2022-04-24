@@ -4,7 +4,6 @@
 ```
 pip install chart-tools
 ```
-In python...
 ```py
 import chart_tools as ct
 ```
@@ -12,6 +11,10 @@ import chart_tools as ct
 <br>
 
 # Load some data
+
+- The `load_data()` function and `DataSource` object use Github's API to explore file structures in repositories containing `.csv` files, and easily load files into dataframes.
+- `load_data()` uses a pre-defined set of DataSources from Github, allowing you to explore the .csv files within them and load a file into a dataframe, all with one line of code.
+- If you have a repository you'd like to get data from, you can create a `DataSource` object which lets you explore its file structure and easily load data, without ever visiting Github!
 
 ### We can use pre-defined sources ...
 ```py
@@ -133,14 +136,14 @@ print(s.datasets)
 <br>
 
 ```py
-s.load("ames_mini", index_col=0)
+s.load("ames_mini")
 ```
 <img width="451" alt="Screen Shot 2022-04-23 at 11 46 43 PM" src="https://user-images.githubusercontent.com/90723578/164958463-8621bc79-562b-4d91-8222-d684e3cccb3c.png">
 
 
 
 #### `DataSource` will recursively find all csv files in all the sub-directories within your path.
-#### For example, let's build the same source without specifying a path
+#### We can build the same source without a path
 ```py
 s = ct.DataSource("ryayoung", "datasets", "main")
 print(s.datasets)
@@ -148,7 +151,7 @@ print(s.datasets)
 ```
 ['data/ames_engineered', 'data/ames_full', 'data/ames_mini', 'data/stock-tweets']
 ```
-#### This works the same, but if we want to load a dataset we'd have to use the full path, `data/ames_mini`
+#### But now, we'll have to use a full path, `data/ames_mini`, when loading data
 #### Here are some examples of using our datasource.
 
 ```py
@@ -185,7 +188,6 @@ s = ct.DataSource("datasets", "football-datasets", "master", "datasets")
 print(s.root) # Clickable url to take you to the datasource
 print(s.req_url) # Url to request github's api for all info on repository
 print(s.file_url("la-liga/season-0809")) # url to raw, downloadable file
-
 ```
 ```
 https://github.com/datasets/football-datasets/tree/master/datasets
