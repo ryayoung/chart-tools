@@ -205,13 +205,13 @@ class DataSource(Source):
 
 # --------------------------------------------------------------------------------
 def get_sources() -> list:
-    return {
-            k: DataSource(name=k)
-    for k, v in sources.items() }
+    return { k: DataSource(name=k) for k, v in sources.items() }
+
 
 def display_sources(srcs) -> None:
     for s in srcs.values():
         print(f" '{s.name}':{(10-len(s.name))*' '}{s.root}")
+
 
 def display_sources_full(srcs) -> None:
     print("(Use load_data(source_name, filename) to load data)")
