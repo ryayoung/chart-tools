@@ -18,12 +18,16 @@ def sig_corr(corr:pd.DataFrame, threshold:float) -> pd.DataFrame:
 
 def superheat(
         corr, title=None, thresh_avg=None, thresh_mask=None,
-        mark_scale=5, size=13, half_mask=True,
+        mark_scale=5, size=None, half_mask=True,
         cbar=True, self_mask=True, grid=True, palette=None,
         marker='s', bar_ticks=5, n_colors=128, **kwargs
     ):
 
     assert len(corr.columns) == len(corr.index), "A correlation df needs the same length columns and index"
+
+    # Chart size
+    if size:
+        sns.set(rc={'figure.figsize':(size, size)})
 
     # Data
     dfc = corr.copy()

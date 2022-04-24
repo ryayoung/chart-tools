@@ -149,6 +149,7 @@ class DataSource(Source):
         if user and repo and branch:
             super().__init__(user, repo, branch, path)
             # self.refresh_datasets()
+            self.name = None
             return
 
         if name:
@@ -160,6 +161,7 @@ class DataSource(Source):
             self.name = name
             # self.refresh_datasets()
             return
+        
 
 
     def display_datasets(self, header=True, trunc=1000):
@@ -181,11 +183,12 @@ class DataSource(Source):
         for dir in self.subdirs:
             print(f"  {dir}/")
             count += 1
-            if count > trunc: break
             for f in self.dir_contents(dir):
                 count += 1
                 if count > trunc: break
                 print(f"    {f}")
+
+            if count > trunc: break
 
         if count > trunc:
             name = self.name if self.name else f"{self.user}/{self.repo}"
@@ -213,9 +216,8 @@ def display_sources(srcs) -> None:
         print(f" '{s.name}':{(10-len(s.name))*' '}{s.root}")
 
 def display_sources_full(srcs) -> None:
-    print("All available datasets")
     print("(Use load_data(source_name, filename) to load data)")
-    print("(Use load_data(source_name, 'help') to see available datasets in source)")
+    print("(Use load_data(source_name) to see available datasets in source)")
     print("")
     for s in srcs.values():
         print(f"'{s.name}'  -  {s.root}")
@@ -231,13 +233,13 @@ def load_data(source=None, file=None, **kwargs) -> pd.DataFrame:
 
     if not source and not file:
         print("Use load_data(source_name, filename) to load dataframe")
-        print("Use load_data(source_name, 'help') to see all datasets in a source.")
-        print("Use load_data('help') to see all datasets.")
+        print("Use load_data(source_name) to see all datasets in a source.")
+        print("Use load_data('all') to see all datasets.")
         print("---------\nSOURCES:")
         display_sources(srcs)
         return None
     
-    if source == 'help' and not file:
+    if source == 'all' and not file:
         display_sources_full(srcs)
         return None
     
@@ -246,7 +248,7 @@ def load_data(source=None, file=None, **kwargs) -> pd.DataFrame:
             srcs[source].display_datasets()
             return None
         if source in srcs['main'].datasets:
-            return srcs['main'].load(source)
+            return srcs['main'].load(source, **kwargs)
 
         print(f"Unknown source, '{source}'")
         return None
@@ -255,4 +257,4 @@ def load_data(source=None, file=None, **kwargs) -> pd.DataFrame:
         print(f"Unknown source, '{source}'")
         return None
     
-    return srcs[source].load(file)
+    return srcs[source].load(file, **kwargs)
