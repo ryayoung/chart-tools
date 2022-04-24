@@ -3,27 +3,59 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
+def sig_corr(corr:pd.DataFrame, threshold:float) -> pd.DataFrame:
+    df = corr.copy()
+    df['mean'] = df.mean(axis=1)
+    to_drop = set()
+    for var in df.index:
+        if abs(df.loc[var, 'mean']) < threshold:
+            to_drop.add(var)
+    df = df.drop(index=to_drop, columns=to_drop)
+    df = df.drop(columns='mean')
+    return df
+
+
 def superheat(
-        corr, title=None, mark_scale=5, size=13, masked=True, cbar=True,
-        grid=True, palette=None, marker='s', bar_ticks=5, n_colors=128, **kwargs
+        corr, title=None, thresh_avg=None, thresh_mask=None,
+        mark_scale=5, size=13, half_mask=True,
+        cbar=True, self_mask=True, grid=True, palette=None,
+        marker='s', bar_ticks=5, n_colors=128, **kwargs
     ):
+
+    assert len(corr.columns) == len(corr.index), "A correlation df needs the same length columns and index"
+
     # Data
     dfc = corr.copy()
+
+    # Remove vars whose absolute mean corr is below threshold
+    if thresh_avg:
+        dfc = sig_corr(corr, thresh_avg)
+    
+    # Mask insignificant correlations, if requested
+    if thresh_mask:
+        dfc = dfc.mask(abs(dfc) < thresh_mask).fillna(0)
+
+    # Reindex before masking, since reindexing will happen later on if we don't
     dfc = dfc.reindex(sorted(dfc.columns), axis=1)
-    if masked:
+    if half_mask:
         for i, c in enumerate(dfc.columns):
-            # Remove self-self correlations
-            dfc.loc[c,c] = 0.0
             # Remove duplicate correlations
             for col in list(dfc.columns[0:i]):
                 dfc.loc[col, c] = 0
+    if self_mask:
+        for i, c in enumerate(dfc.columns):
+            # Remove self-self correlations
+            dfc.loc[c,c] = 0.0
 
-    dfc = pd.melt(dfc.reset_index(), id_vars='index') # Unpivot the dataframe, so we can get pair of arrays for x and y
+    # Unpivot df to get paired x & y arrays
+    dfc = pd.melt(dfc.reset_index(), id_vars='index')
     dfc.columns = ['x', 'y', 'value']
     x = dfc['x']
     y=dfc['y']
     size=dfc['value'].abs()
 
+    # Plot setup
     fig, ax = plt.subplots()
     plot_grid = plt.GridSpec(1,30,hspace=0.2,wspace=0.1)
     ax = plt.subplot(plot_grid[:,:-1])
@@ -98,5 +130,5 @@ def superheat(
         axb.set_xticks([]) # Remove horizontal ticks
         axb.set_yticks(np.linspace(min(bar_y), max(bar_y), bar_ticks)) # Show vertical ticks for min, middle and max
         axb.yaxis.tick_right() # Show vertical ticks on the right
-    
-    return (fig, ax, axb)
+
+    return (fig, ax);
