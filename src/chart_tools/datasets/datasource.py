@@ -168,7 +168,8 @@ class DataSource(Source):
                 print(f"Datasets for '{self.name}':")
             if self.name == None:
                 print(f"Datasets in '{self.user}/{self.repo}/{self.path}':")
-            print("(refer files inside folders using the full path. Ex: 'folder/file')")
+            if len(self.subdirs) > 0:
+                print("(refer files inside folders using the full path. Ex: 'folder/file')")
             print("---------------------------")
         
         # Files in base directory
@@ -240,13 +241,13 @@ def load_data(source=None, file=None, **kwargs) -> pd.DataFrame:
         display_sources_full(srcs)
         return None
     
-    if source in srcs.keys() and file == 'help':
-        srcs[source].display_datasets()
-        return None
-    
     if not file:
+        if source in srcs.keys():
+            srcs[source].display_datasets()
+            return None
         if source in srcs['main'].datasets:
             return srcs['main'].load(source)
+
         print(f"Unknown source, '{source}'")
         return None
         
