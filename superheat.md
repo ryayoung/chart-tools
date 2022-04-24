@@ -107,6 +107,10 @@ ct.superheat(df.corr(), grid=False, marker='o');
 ```
 <img width="500" alt="Screen Shot 2022-04-24 at 3 03 29 AM" src="https://user-images.githubusercontent.com/90723578/164968882-efbce738-9b95-4ade-a899-fc01262f2c53.png">
 
+### Why is superheat great for large datasets?
+Because with something like this, the less you see, the better
+<img width="600" alt="Screen Shot 2022-04-24 at 3 09 06 AM" src="https://user-images.githubusercontent.com/90723578/164969119-f7950d5a-f40c-4a6e-b6d6-cc1067dec474.png">
+
 
 <br><br>
 
