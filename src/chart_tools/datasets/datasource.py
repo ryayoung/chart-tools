@@ -14,6 +14,7 @@ class Source:
     __datasets = []
     truncated_datasets = False
 
+    # Getters - no logic
     @property
     def user(self):
         return self.__user
@@ -25,47 +26,41 @@ class Source:
         return self.__branch
     @property
     def path(self):
-        # if self.__path.endswith("/") or self.__path == "":
         return self.__path
-        # else:
-            # return f"{self.__path}/"
+
+    # Getters - logic
     @property
     def datasets(self) -> list:
-        if self.__datasets == []:
+        if self.__datasets == []: # Only load file structure when asked
             self.refresh_datasets()
-
         return self.__datasets
 
     @property
     def subdirs(self) -> list:
-        if self.__datasets == []:
-            self.refresh_datasets()
-
         return list(set([
                 f.split('/')[0] for f in self.datasets if "/" in f
             ]))
-    
+
     @property
     def datasets_base(self) -> list:
-        if self.__datasets == []:
-            self.refresh_datasets()
-
+        """ Base filenames, without path """
         return [f.rsplit('/', 1)[-1] for f in self.datasets]
 
     @property
     def root(self) -> str:
         """
-        Returns user-friendly url to visit the source on Github.com
+        User-friendly url to visit the source on Github.com
         """
         return f"https://github.com/{self.user}/{self.repo}/tree/{self.branch}/{self.path}"
     
     @property
     def req_url(self) -> str:
         """
-        Returns url to Github API for getting all files in repo and branch
+        Url to Github API for getting all files in repo and branch
         """
         return f"https://api.github.com/repos/{self.user}/{self.repo}/git/trees/{self.branch}?recursive=1"
     
+    # Setters - include validation logic
     @user.setter
     def user(self, value):
         if "/" in value:
@@ -95,17 +90,19 @@ class Source:
 
     def file_url(self, filename) -> str:
         """
-        Returns url to raw file
+        Url to raw, downloadable file
         """
         path = f"{self.path}/" if len(self.path) > 0 else self.path
         return f"https://raw.githubusercontent.com/{self.user}/{self.repo}/{self.branch}/{path}{filename}.csv"
 
 
     def req_files(self) -> list:
+        """ Request files """
         return requests.get(self.req_url).json()
     
 
     def dir_contents(self, dir) -> list:
+        """ Get filenames in directory """
         return [f.removeprefix(f"{dir}/") for f in self.datasets if f.startswith(dir)]
 
 
@@ -117,6 +114,7 @@ class Source:
             return pd.read_csv(self.file_url(fname), **kwargs)
 
         if countOf(self.datasets_base, fname) == 1:
+            # Allows you to use base filename ONLY if there are no duplicates
             full_fname = [f for f in self.datasets if f.rsplit('/', 1)[-1] == fname][0]
             return pd.read_csv(self.file_url(full_fname), **kwargs)
 
@@ -126,6 +124,7 @@ class Source:
             "If the latter is true, please use the full subpath instead."
             )
         
+
     def refresh_datasets(self):
         res = self.req_files()
         if res.get("message") == "Not Found":
@@ -139,7 +138,7 @@ class Source:
 
 
 class DataSource(Source):
-    sources = []
+    sources = [] # When sources are initialized they stay here, to minimize api requests
 
     def __init__(self, user=None, repo=None, branch=None, path="", name=None):
 
@@ -153,6 +152,7 @@ class DataSource(Source):
             return
 
         if name:
+            # Create a DataSource by using only the name of a pre-defined one
             source = sources.get(name, None)
             if not source:
                 raise ValueError(f"Unknown source, '{name}'")
@@ -161,7 +161,6 @@ class DataSource(Source):
             self.name = name
             # self.refresh_datasets()
             return
-        
 
 
     def display_datasets(self, header=True, trunc=1000):
@@ -193,7 +192,6 @@ class DataSource(Source):
         if count > trunc:
             name = self.name if self.name else f"{self.user}/{self.repo}"
             print(f"      ({len(self.datasets)-count} more files in {name})")
-            
     
 
     def display_subdirs(self):
@@ -224,6 +222,7 @@ def display_sources_full(srcs) -> None:
         print("---------------------------------")
         s.display_datasets(header=False, trunc=15)
         print()
+
 
 def load_data(source=None, file=None, **kwargs) -> pd.DataFrame:
 
