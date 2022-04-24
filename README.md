@@ -15,7 +15,7 @@ import chart_tools as ct
 - `load_data()` uses a pre-defined set of DataSources from Github, allowing you to explore the .csv files within them and load a file into a dataframe, all with one line of code.
 - If you have a repository you'd like to get data from, you can create a `DataSource` object which lets you explore its file structure and easily load data, without ever visiting Github!
 
-# Charts & Visualization
+# [Charts & Visualization](/superheat.md)
 
 ### [`superheat`](/superheat.md)
 - A "super" correlation heatmap you can't find elsewhere
