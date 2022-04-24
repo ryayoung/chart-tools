@@ -2,6 +2,7 @@
 
 **`load_data()`**
 - Uses a pre-defined set of `DataSource`s from Github, allowing you to explore the .csv files within them and load a file into a dataframe, all with one line of code.
+
 **`DataSource`**
 - You can define your own data source from any existing Github repository that contains csv files, and explore its file structure without ever visiting github, and easily load data, all with 1-liners.
 
