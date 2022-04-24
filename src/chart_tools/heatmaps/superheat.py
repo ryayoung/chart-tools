@@ -18,8 +18,8 @@ def sig_corr(corr:pd.DataFrame, threshold:float) -> pd.DataFrame:
 
 def superheat(
         corr, title=None, thresh_avg=None, thresh_mask=None,
-        mark_scale=5, size=None, half_mask=True,
-        cbar=True, self_mask=True, grid=True, palette=None,
+        half_mask=True, self_mask=True, cbar=True, mark_scale=5,
+        grid=True, palette=None, size=None,
         marker='s', bar_ticks=5, n_colors=128, **kwargs
     ):
 
