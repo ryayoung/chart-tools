@@ -79,7 +79,7 @@ class Source:
         return f"https://api.github.com/repos/{self.user}/{self.repo}/git/trees/{self.branch}?recursive=1"
     
     def get(self, dataset_name):
-        return self.cache[dataset_name].copy()
+        return self.cache.get(dataset_name, pd.DataFrame()).copy()
     
     # Setters - include validation logic
     @user.setter
@@ -166,6 +166,7 @@ class Source:
             "that is duplicated across multiple sub-directories in the chosen path. "
             "If the latter is true, please use the full subpath instead."
             )
+    
     
 
     def save_cached(self, dir="", **kwargs):
