@@ -234,3 +234,49 @@ s.dir_contents('serie-a') # see all csv files in 'serie-a' directory
 s.load("serie-a/season-0809")
 ```
 <img width="472" alt="Screen Shot 2022-04-24 at 12 19 39 AM" src="https://user-images.githubusercontent.com/90723578/164959543-69abf757-1eff-4a36-9d94-f5c463b00ea8.png">
+
+---
+
+<br>
+
+# Define your own library of data sources
+The pre-defined sources in chart-tools are _NOT_ defined in the source code. Only a _url_ to a _library_ is defined. When you use `ct.load_data()`, the library configuration gets downloaded and used to create a collection of DataSources for you to interact with.
+### What's a library?
+- A library is a simple JSON structure that defines DataSources, and assigns a custom name to each. Here's an example:
+
+```
+{
+    "main": {
+        "u": "ryayoung",
+        "r": "datasets",
+        "b": "main",
+        "p": "data"
+    },
+    "covid": {
+        "u": "datasets",
+        "r": "covid-19",
+        "b": "main",
+        "p": "data"
+    }
+}
+```
+1. This simply defines two DataSources, 'main' and 'covid', and specifies a `u`: Github user, `r`: repository, `b`: branch, `p`: path.
+2. Chart-tools has a pre-defined url to a json file on github that contains a structure like the above. 
+3. You can change this to either a url to a raw json file in the cloud, OR a path to a local json file on your computer.
+4. Then, you can use `ct.load_data()` to interact with the library without the need to define a DataSource.
+
+### How to define your own library
+#### _Option 1: cloud_
+- Just upload a json file to one of your repositories, go to the RAW file, and copy the url
+```py
+ct.set_library("https://raw.githubusercontent.com/[USER]/[REPO]/[BRANCH]/[FILENAME].json")
+```
+#### _Option 2: local_
+```py
+ct.set_library("my_sources.json")
+```
+
+
+
+
+
