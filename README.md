@@ -6,6 +6,8 @@ pip install chart-tools
 ```
 ```py
 import chart_tools as ct
+ct.load_data() # outputs available pre-defined data sources
+ct.load_data('football') # outputs all the files and directories in the 'football' data source
 ```
 
 <br>
