@@ -1,9 +1,10 @@
-# The `load_data()` function, and `DataSource` & `Library` objects.
-
+## The `load_data()` function, and `DataSource` & `Library` objects.
+---
 ## Designed for Jupyter notebooks
 - Interactive tools for exploring and loading datasets from online Github repositories.
 - Real-time access to see the contents of any Github repository, displaying only csv files.
-- Robust caching system, useful for working with large data files, making your notebook perform as if the files were stored locally
+- Pre-defined `Library` of repositories to load data from, with a single line of code.
+- Robust caching system, useful for working with large data files, making your notebook perform even better than if the files were stored locally
 
 **`load_data()`**
 - Uses a pre-defined library of `DataSource`s (collection of github repositories), allowing you to explore the .csv files within them and load a file into a dataframe, all with one line of code.
