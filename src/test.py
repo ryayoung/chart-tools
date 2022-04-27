@@ -1,35 +1,19 @@
-# import chart_tools as ct
+import chart_tools as ct
 from dataclasses import dataclass
+import time
 
-# ct.load_data()
+# s = ct.DataSource('ryayoung', 'datasets', 'main', 'data')
 
+# ct.set_library("https://raw.githubusercontent.com/ryayoung/datasets/main/test-library.json")
 
-@dataclass
-class something:
-    dfs: [str]
+df = ct.load_data('ames_mini')
 
-
-class KwargDF:
-
-    def __init__(self, df, **kwargs):
-        self.__df = df
-        self.__kwarg_str = str(kwargs)
-
-    @property
-    def df(self):
-        return self.__df.copy() # return a COPY
-
-    @property
-    def kwarg_str(self) -> int:
-        return self.__kwarg_str
-
-
-
-# s = KwargDF("hello")
-
-# print(s.__df)
-
-
-lol = something(["hi", "lol"])
-
-print(lol.dfs)
+plt, ax = ct.superheat(df.corr())
+plt.show()
+# ct.library_help()
+# print(s.load('ames_mini'))
+# 
+# 
+# name = "data/ames"
+# 
+# print(name.split('/')[-1])

@@ -1,9 +1,22 @@
-from chart_tools.data.source import source
+from chart_tools.data.source import Source
 
 
 class DataSource(Source):
     """
-    Here's the documentation
+    Similar to Source, but provides high level, user-friendly experience
+    for initialization, displaying contents, and Library interaction.
+    ---
+    Has one extra property, 'name', which is ONLY needed or used when self is
+    stored in a Library: it's the key used to access self from a Library
+    ---
+    Adds logic to initialization:
+        - Init from an existing datasource in default_lib by passing only name
+        - Sets name to repo if no name provided
+        - Idiot-proof declaration with validation
+    ---
+    DataSource and Library are meant to be used with Jupyter notebooks.
+    If using pure python, and the desired source and filenames are already
+    known, then most users should use Source instead.
     """
 
     def __init__(self, user=None, repo=None, branch=None, path="", name=None):
@@ -16,9 +29,12 @@ class DataSource(Source):
                 self.name = self.repo
             return
 
-        elif name and "default_lib" in globals():
+        elif name and "default_lib" in globals(): # default_lib might not be initialized
             if default_lib.sources == None:
-                raise ValueError("There are no predefined sources to choose from")
+                raise ValueError(
+                        "There are no predefined sources to choose from. "
+                        "Use full declaration instead: user, repo, branch, path."
+                        )
             # Create a DataSource by using only the name of a pre-defined one
             source = default_lib.sources.get(name, None)
             if not source:
@@ -29,11 +45,18 @@ class DataSource(Source):
             return
 
         else:
-            self.user = user if user else ""
-            self.repo = repo if repo else ""
-            self.branch = branch if branch else ""
-            self.path = path if path else ""
-            self.name = name
+            if user or repo or branch or name:
+                raise ValueError(
+                        "Invalid DataSource declaration. Either provide a name "
+                        "of an existing datasource within the default library (name='...'), "
+                        "or pass (user, repo, branch, path) defining a github repository "
+                        )
+            self.user = None
+            self.repo = None
+            self.branch = None
+            self.path = None
+            self.datasets = None
+            self.name = None
     
 
     def __repr__(self):

@@ -17,13 +17,25 @@ def sig_corr(corr:pd.DataFrame, threshold:float) -> pd.DataFrame:
 
 
 def superheat(
-        corr, title=None, thresh_avg=None, thresh_mask=None,
-        half_mask=True, self_mask=True, cbar=True, mark_scale=5,
-        grid=True, palette=None, size=None,
-        marker='s', bar_ticks=5, n_colors=128, **kwargs
+        corr:pd.DataFrame,
+        title=None,
+        thresh_avg=None,
+        thresh_mask=None,
+        half_mask=True,
+        self_mask=True,
+        cbar=True,
+        mark_scale=5,
+        grid=True,
+        palette=None,
+        size=None,
+        marker='s',
+        bar_ticks=5,
+        n_colors=128,
+        **kwargs
     ):
 
-    assert len(corr.columns) == len(corr.index), "A correlation df needs the same length columns and index"
+    if not len(corr.columns) == len(corr.index):
+        raise ValueError("A correlation df needs the same length columns and index")
 
     # Chart size
     if size:

@@ -6,34 +6,16 @@ import json
 import os
 from hashlib import md5
 
-default_lib = None
+from chart_tools.data.dfcache import DFCache
 
 
 def check_internet():
-    """ Don't hit github api if no internet """
+    """ Don't do internet stuf if no internet """
     try:
         request = requests.get("https://www.google.com/", timeout=5)
         return True
     except (requests.ConnectionError, requests.Timeout) as e:
         return False
-
-
-# ----------------------------------------------------------------------
-# Note: change this to DFCache and make it hold all cache data
-# ----------------------------------------------------------------------
-class KwargDF:
-
-    def __init__(self, df:pd.DataFrame()=None, **kwargs):
-        self.df = df
-        self.kwarg_str = str(kwargs)
-
-    @property
-    def df(self) -> pd.DataFrame():
-        return self._df.copy() # return a COPY
-
-    @property
-    def kwarg_str(self) -> int:
-        return self._kwarg_str
 
 
 
@@ -43,8 +25,9 @@ class Source:
     __repo: str
     __branch: str
     __path: str
-    __datasets = [str]
-    __cached_dfs = {KwargDF} # Can't directly change. Only add/remove/change
+    __datasets = []
+    __datasets_full = []
+    cache = DFCache()
 
     # Getters
     @property
@@ -60,19 +43,23 @@ class Source:
     def path(self):
         return self.__path.strip("/")
 
-    def cache_get(self, dataset_name=None): # Not property, since we might need just dataset
-        if not dataset_name:
-            return self.__cached_dfs
-        return self.__cached_dfs.get(dataset_name, KwargDF()).df # returns copy
-
     @property
     def datasets(self) -> list:
         """
         Load datasets only when we try to access them
         """
         if self.__datasets == []:
-            self.__datasets = self.refresh_datasets()
+            self.refresh_datasets()
         return self.__datasets
+
+    @property
+    def datasets_full(self) -> list:
+        """
+        Load datasets only when we try to access them
+        """
+        if self.__datasets_full == []:
+            self.refresh_datasets()
+        return self.__datasets_full
 
     # Getters - calculated
     @property
@@ -132,27 +119,6 @@ class Source:
         # Update datasets since path changed, but only if we have valid data
         if self.user != "" and self.repo != "" and self.branch != "":
             self.refresh_datasets()
-    
-
-    def cache_exists(self, key, **kwargs):
-        if key in self.__cached_dfs:
-            if self.__cached_dfs[key].kwarg_str == str(kwargs):
-                return True
-        return False
-
-
-    def cache_add(self, key, df, **kwargs):
-        """ Add new frame to cache """
-        kwarg_df = KwargDF(df, **kwargs)
-        if self.cache_exists(key, **kwargs):
-            if not self.__cached_dfs[key] == kwarg_df:
-                self.__cached_dfs[key] = kwarg_df
-            return
-        self.__cached_dfs[key] = kwarg_df
-
-
-    def cache_pop(self, key):
-        self.__cached_dfs.pop(key)
 
 
     def file_url(self, filename) -> str:
@@ -176,42 +142,60 @@ class Source:
 
 
     def load(self, fname, save=True, **kwargs) -> pd.DataFrame:
-        # Validate it exists
+        """
+        Given a filename, return a dataframe!
+        ---
+        Idiot-proof user input for different ways of referring to files.
+        - If they pass filename 'cool-data' and we find a file called
+          'data/cool-data', AND no other sub-dir contains a file with that name,
+          then let's load it for em!
+        - If they accidentally put their defined source path, redundantly, in
+          the filename, then let's be nice and figure it out
+        ---
+        About cache, and the 'save' argument:
+        - Add to cache only when save is true
+        - If save is false, remove an existing cache if exists for
+          that file, but only if dataframes match (same kwargs)
+        """
+
+        # Validate dataset name exists, and modify as necessary
         # This also validates that datasets are loaded and connection to GH works
         name = None
         if countOf(self.datasets, fname) == 1:
             name = fname
+
+        elif countOf(self.datasets, fname.split('/')[-1]) == 1:
+            name = fname.split('/')[-1]
+
+        elif countOf(self.datasets_full, fname) == 1:
+            name = fname.removeprefix(f"{self.path}/")
+
+        # Note to self: Come back to this, i think this can be removed
         elif countOf(self.datasets_base, fname) == 1:
             name = [f for f in self.datasets if f.rsplit('/', 1)[-1] == fname][0]
+
         else:
             raise ValueError(
-                "Either the file doesn't exist, or you specified a filename "
-                "that is duplicated across multiple sub-directories in the chosen path. "
-                "If the latter is true, please use the full subpath instead."
+                "Either the file doesn't exist, or your query matched more than one file.\n"
+                "If the latter is true, make sure to use the full subpath.\n"
+                "Hint: Here's the url that would have been used, but it was detected as invalid:\n"
+                f"{self.file_url(fname)}"
                 )
 
-        # Check cache
-        if self.cache_exists(name, **kwargs):
-            if save == True:
-                return self.cache_get(name)
-            else:
-                # Passing save=False will not only prevent caching, but it will
-                # pop an existing cache for that version of the data if exists
-                self.cache_pop(name)
+        # Cache
+        if self.cache.df_matches(name, **kwargs):
+            df = self.cache.get(name)
+            if not save:
+                # Pop existing cache for that version of the data if exists
+                self.cache.pop(name)
+            return df
 
         # Load new data, cache, and return
-        df = pd.read_csv(self.file_url(fname), **kwargs)
-        self.cache_add(name, df, **kwargs)
-        return self.cache_get(name)
+        df = pd.read_csv(self.file_url(name), **kwargs)
+        if save:
+            self.cache.add(name, df, **kwargs)
 
-
-    def save_cached(self, dir="", **kwargs):
-        if dir != "":
-            if not os.path.exists(dir):
-                os.mkdir(dir)
-            dir = f"{dir}/"
-        for name, item in self.cache.items():
-            item['df'].to_csv(f"{dir}{name}.csv", **kwargs)
+        return self.cache.get(name)
         
 
     def save_all(self, dir="", **kwargs):
@@ -243,9 +227,12 @@ class Source:
                     if not os.path.exists(p):
                         os.mkdir(p)
 
-        # Save datasets
+        # Save datasets.
         for name in self.datasets:
-            save = False if name not in self.cache else True
+            # Pass save argument false if it's not already cached,
+            # because we don't want to cache everything. But if it is
+            # cached, load() will overwrite it with the new kwargs
+            save = False if not self.cache.has_key(name) else True
             df = self.load(name, save=save, **kwargs)
             if dir != "":
                 df.to_csv(f"{dir}/{name}.csv", **kwargs)
@@ -260,8 +247,16 @@ class Source:
 
         if res.get("message") == "Not Found":
             raise ValueError("No files found. Likely an invalid data source")
+
+        full_paths = [f['path'].removesuffix('.csv')
+                        for f in res['tree'] if ".csv" in f['path']]
         
-        return [f['path'].removesuffix('.csv').removeprefix(f"{self.path}/")
-                    for f in res['tree'] if ".csv" in f['path']]
+        self.__datasets_full = full_paths
+        
+        self.__datasets = [f.removeprefix(f"{self.path}/") for f in full_paths]
+
+
+
+
 
 
