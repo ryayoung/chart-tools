@@ -1,4 +1,9 @@
-# Let's load some data
+# The `load_data()` function, and `DataSource` & `Library` objects.
+
+## Designed for Jupyter notebooks
+- Interactive tools for exploring and loading datasets from online Github repositories.
+- Real-time access to see the contents of any Github repository, displaying only csv files.
+- Robust caching system, useful for working with large data files, making your notebook perform as if the files were stored locally
 
 **`load_data()`**
 - Uses a pre-defined library of `DataSource`s (collection of github repositories), allowing you to explore the .csv files within them and load a file into a dataframe, all with one line of code.
@@ -51,6 +56,11 @@ Datasets for 'covid':
   us_simplified
   worldwide-aggregate
 ```
+#### Great, we found it. Let's load it again
+```py
+ct.load_data('covid', 'countries-aggregated')
+```
+<img width="469" alt="Screen Shot 2022-04-23 at 10 36 10 PM" src="https://user-images.githubusercontent.com/90723578/164956857-b1834946-7f2f-4c1f-970c-a6bc072229f3.png">
 
 #### What about larger sources with sub-directories?
 ```py
