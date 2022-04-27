@@ -74,6 +74,7 @@ class Library:
 
     
     def display_sources(self) -> None:
+        """ Just source names and github links """
         if self.sources:
             for s in self.sources.values():
                 print(f" '{s.name}':{(10-len(s.name))*' '}{s.root}")
@@ -81,7 +82,8 @@ class Library:
 
     def display_all(self) -> None:
         """
-        Documentation
+        Dispays all files in all sources, truncated at
+        15 files per source
         """
         if not self.sources:
             return
@@ -96,6 +98,17 @@ class Library:
     
 
     def load_data(self, source:str=None, file:str=None, save=True, **kwargs) -> pd.DataFrame:
+        """
+        Loads data in a user-friendly way
+        ---
+        No params:
+        - Provides help on loading data
+        One positional argument:
+        - If 'all', display all sources and files in default library
+        - If name is in default lib datasets, load it
+        Two positional arguments:
+        - Simply look for the file in provided source
+        """
         if not self.sources:
             return
         

@@ -6,10 +6,8 @@ import time
 
 # ct.set_library("https://raw.githubusercontent.com/ryayoung/datasets/main/test-library.json")
 
-df = ct.load_data('ames_mini')
+print(ct.load_data('main'))
 
-plt, ax = ct.superheat(df.corr())
-plt.show()
 # ct.library_help()
 # print(s.load('ames_mini'))
 # 
