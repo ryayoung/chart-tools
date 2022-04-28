@@ -1,4 +1,5 @@
 from chart_tools.data.source import Source
+import requests
 
 
 class DataSource(Source):
@@ -9,40 +10,43 @@ class DataSource(Source):
     Has one extra property, 'name', which is ONLY needed or used when self is
     stored in a Library: it's the key used to access self from a Library
     ---
-    Adds logic to initialization:
+    Adds logic and validation to constructor:
         - Init from an existing datasource in default_lib by passing only name
         - Sets name to repo if no name provided
         - Idiot-proof declaration with validation
     ---
-    DataSource and Library are meant to be used with Jupyter notebooks.
-    If using pure python, and the desired source and filenames are already
-    known, then most users should use Source instead.
+    DataSource, Source, and Library are meant for Jupyter notebooks,
+    where the biggest performance gain is to be had from caching. They should
+    never be used in a production setting, as they would be very slow.
     """
 
-    def __init__(self, user=None, repo=None, branch=None, path="", name=None):
+    def __init__(self,
+            user=None,
+            repo=None,
+            branch=None,
+            path="",
+            *,
+            name=None,
+            url=None,
+        ):
 
-        if user and repo and branch:
-            super().__init__(user, repo, branch, path)
-            if name:
-                self.name = name
-            else:
-                self.name = self.repo
-            return
-
-        elif name and "default_lib" in globals(): # default_lib might not be initialized
-            if default_lib.sources == None:
-                raise ValueError(
-                        "There are no predefined sources to choose from. "
-                        "Use full declaration instead: user, repo, branch, path."
-                        )
-            # Create a DataSource by using only the name of a pre-defined one
-            source = default_lib.sources.get(name, None)
-            if not source:
-                raise ValueError(f"Unknown source, '{name}'")
-
-            super().__init__(source.user, source.repo, source.branch, source.path)
+        if name:
             self.name = name
-            return
+        else:
+            self.name = repo
+
+        # OPTION 1: url as single positional
+        if "github.com/" in str(user) or url:
+            self.init_from_url(user, path)
+
+        # OPTION 2
+        elif user and repo and branch:
+            super().__init__(user, repo, branch, path)
+
+        # OPTION 3: Given user and repo, request default branch and init
+        elif user and repo:
+            branch = self.request_branch(user, repo)
+            super().__init__(user, repo, branch, "") # Always empty path if branch unknown
 
         else:
             if user or repo or branch or name:
@@ -51,24 +55,68 @@ class DataSource(Source):
                         "of an existing datasource within the default library (name='...'), "
                         "or pass (user, repo, branch, path) defining a github repository "
                         )
-            self.user = None
-            self.repo = None
-            self.branch = None
-            self.path = None
-            self.datasets = None
-            self.name = None
-    
 
-    def __repr__(self):
-        if self.name != None:
-            return f"{self.name}:{(10-len(self.name))*' '}{self.root}"
+
+    def init_from_url(self, url, path):
+        """
+        Constructs a Source, given only a url and optional
+        sub-path. Validate the url and correct for errors first.
+        """
+        # Standardize format: 3 valid options: https, http, or none
+        url = url.removeprefix("https://") \
+                 .removeprefix("http://")
+
+        if not url.startswith("github.com/"):
+            err_url(url)
+
+        items = url.removeprefix("github.com/") \
+                   .removesuffix("/") \
+                   .split("/")
+
+        self.user = items[0]
+        self.repo = items[1]
+
+        if len(items) == 2:
+            # If they link to root of repo, we don't know the branch. Go find it
+            self.branch = self.request_branch(self.user, self.repo)
+            self.path = path
+
+        elif items[2] == "tree" and len(items) > 3:
+            # Now we know it's a valid format. So we can create the datasource
+            # successfully. Info gets validated later, once we access self.datasets
+            self.branch = items[3]
+            self.path = "/".join(items[4:])
+
         else:
-            return f"{self.user}/{self.repo}:{(20-(len(self.repo)+len(self.repo)))*' '}{self.root}"
+            err_url(url)
+
+        super().__init__(self.user, self.repo, self.branch, self.path)
+
+
+    def err_url(url):
+        """ Descriptive error for an invalid url used for construction """
+        raise ValueError(
+                f"Invalid url: {url}.\nValid formats:\n"
+                "1. https://github.com/[USER]/[REPO]/tree/[BRANCH]/[DIR]\n"
+                "2. https://github.com/[USER]/[REPO]"
+                )
+
+
+    def request_branch(self, user, repo):
+        """
+        Called from init when only name and repo are known.
+        Called from init_from_url when ROOT link to repo is passed, in which
+        case the branch is unknown.
+        """
+        req_url = f"https://api.github.com/repos/{user}/{repo}?recursive=1"
+        res = requests.get(req_url).json()
+        return res['default_branch']
 
 
     def display_datasets(self, header=True, trunc=1000):
         """
-        
+        Display datasets inside source, truncated if asked.
+        Format differently if there are sub-directories.
         """
         if self.datasets == []:
             return
@@ -107,3 +155,15 @@ class DataSource(Source):
         print("---------------------------------------")
         print("  ", end="")
         print(*self.subdirs, sep="\n  ")
+
+
+    def __repr__(self):
+        if self.name != None:
+            return f"{self.name}:{(10-len(self.name))*' '}{self.root}"
+        else:
+            return (f"{self.user}/{self.repo}:"
+                    f"{(20-(len(self.repo)+len(self.repo)))*' '}{self.root}")
+
+
+
+

@@ -18,16 +18,39 @@ def check_internet():
         return False
 
 
-
 @dataclass
 class Source:
+    """
+    Defines a location in a Github repository that stores csv files.
+    ---
+    This is the 'backend' for DataSource and Library. Handles everything
+    EXCEPT constructor logic, user input validation, neatly formatted
+    outputs of the source's contents, and Library compatibility.
+    ---
+    - Only requests the contents (file structure) of the repository
+      once that information is accessed as a property.
+    - Loaded dataframes are cached based on keyword args (those passed
+      to pd.read_csv()). See DFCache for more info
+    - Ability to write entire datasource, preserving its file structure,
+      to computer with one function. This is different from cloning the
+      repo. It downloads only csv files, and any pandas kwargs
+      passed (for pd.read_csv()) get applied to all datasets.
+    """
     __user: str
     __repo: str
     __branch: str
     __path: str
-    __datasets = []
-    __datasets_full = []
-    cache = DFCache()
+
+    __datasets = [] # Names of all csv files in repository. Our github
+    # api request returns full filepath starting at root, so our optional
+    # 'path' variable should be trimmed away from the prefix
+
+    __datasets_full = [] # Full filepath from root, as returned from
+    # github api request, trimmed only of the .csv at the end. This
+    # is used only for validation purposes, to correct user mistakes
+    # and make sure we build a valid url before loading data.
+
+    cache = DFCache() # DFs cached after user loads them. See DFCache
 
     # Getters
     @property
@@ -158,6 +181,10 @@ class Source:
           that file, but only if dataframes match (same kwargs)
         """
 
+        # -------- IMPORTANT --------------
+        # THIS IF-ELSE BLOCK NEEDS TO MOVE TO DATASOURCE CLASS.
+        # THEN, DATASOURCE CLASS NEEDS A "LOAD()" FUNCTION
+        # ----------------------------------
         # Validate dataset name exists, and modify as necessary
         # This also validates that datasets are loaded and connection to GH works
         name = None
@@ -169,10 +196,6 @@ class Source:
 
         elif countOf(self.datasets_full, fname) == 1:
             name = fname.removeprefix(f"{self.path}/")
-
-        # Note to self: Come back to this, i think this can be removed
-        elif countOf(self.datasets_base, fname) == 1:
-            name = [f for f in self.datasets if f.rsplit('/', 1)[-1] == fname][0]
 
         else:
             raise ValueError(
@@ -193,7 +216,7 @@ class Source:
         # Load new data, cache, and return
         df = pd.read_csv(self.file_url(name), **kwargs)
         if save:
-            self.cache.add(name, df, **kwargs)
+            self.cache.add(fname, df, **kwargs)
 
         return self.cache.get(name)
         
@@ -231,7 +254,7 @@ class Source:
         for name in self.datasets:
             # Pass save argument false if it's not already cached,
             # because we don't want to cache everything. But if it is
-            # cached, load() will overwrite it with the new kwargs
+            # cached, overwrite it with the new kwargs
             save = False if not self.cache.has_key(name) else True
             df = self.load(name, save=save, **kwargs)
             if dir != "":

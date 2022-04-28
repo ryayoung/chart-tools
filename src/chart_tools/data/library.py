@@ -1,4 +1,5 @@
 from chart_tools.data.datasource import DataSource
+from operator import countOf
 import pandas as pd
 import requests
 
@@ -53,6 +54,7 @@ class Library:
             try:
                 self.data = dict(requests.get(url).json())
             except Exception as e:
+                print("Error getting library data")
                 self.data = None
         # Local library
         else:
@@ -70,7 +72,7 @@ class Library:
                     raise ValueError("Wrong library structure. Keys must be ['u', 'r', 'b', 'p']")
 
             self.url = url
-            self.sources = { k: DataSource(v['u'], v['r'], v['b'], v['p'], k) for k, v in self.data.items() }
+            self.sources = { k: DataSource(v['u'], v['r'], v['b'], v['p'], name=k) for k, v in self.data.items() }
 
     
     def display_sources(self) -> None:
@@ -152,16 +154,66 @@ class Library:
             return self.sources[source].load(file, save, **kwargs)
 
 
+    def df(self, filename) -> pd.DataFrame:
+        """
+        Looks for filename in the cache of EACH datasource
+        in the library, and returns the first match.
+        ---
+        The intended workflow for this function would be to run
+        'ct.load_data(...)' at the top of your notebook with the import
+        statements, and then assign it to a variable later on, when needed
+        """
+        if not self.sources:
+            return
+
+        for s in self.sources.values():
+            # This time, DO NOT access the source's datasets property.
+            # That will force us to request file structure for each source
+            # we loop through. That's not good.
+            name = None
+            if s.cache.has_key(filename):
+                name = filename
+            elif s.cache.has_key(filename.split('/')[-1]):
+                name = filename.split('/')[-1]
+            else:
+                continue
+
+            return s.cache.get(name)
+
+        raise ValueError(
+                f"Unable to find '{filename}' cached in any of the library's sources.\n"
+                f"Try ct.load_data(source_name, 'ames_mini') instead. "
+                )
+
 
 
 # --------------------------------------------------------------------------------
-default_lib = Library("https://raw.githubusercontent.com/ryayoung/datasets/main/chart-tools-default-library.json")
+default_library = Library("https://raw.githubusercontent.com/ryayoung/datasets/main/chart-tools-default-library.json")
+
+
+def default_lib_url():
+    return default_library.url
+
+
+def reset_library():
+    default_library.set("https://raw.githubusercontent.com/ryayoung/datasets/main/chart-tools-default-library.json")
+
+
+def default_lib():
+    return default_library.sources
+
 
 def set_library(url):
-    default_lib.set(url)
+    default_library.set(url)
+
 
 def load_data(source=None, file=None, save=True, **kwargs) -> pd.DataFrame:
-    return default_lib.load_data(source, file, save, **kwargs)
+    return default_library.load_data(source, file, save, **kwargs)
+
+
+def df(fname) -> pd.DataFrame:
+    return default_library.df(fname)
+
 
 def library_help():
     print("""Library: Create a json file containing a dict of dicts,

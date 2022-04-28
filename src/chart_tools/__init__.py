@@ -11,8 +11,12 @@ from chart_tools.data.datasource import (
         )
 from chart_tools.data.library import (
         Library,
+        default_library,
         default_lib,
         load_data,
+        reset_library,
         set_library,
+        df,
         library_help,
         )
+

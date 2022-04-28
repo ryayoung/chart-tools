@@ -30,6 +30,10 @@ class DFCache:
             . . .
         }
     }
+    ---
+    DataSource, Source, and Library are meant for Jupyter notebooks,
+    where the biggest performance gain is to be had from caching. They should
+    never be used in a production setting, as they would be very slow.
     """
     __cache = dict()
 
@@ -57,7 +61,7 @@ class DFCache:
     def get(self, key) -> pd.DataFrame():
         if self.has_key(key):
             return self.cache[key]['df'].copy()
-        return None
+        return pd.DataFrame()
 
 
     def to_csv(self, dir="", **kwargs):
