@@ -11,6 +11,7 @@ class Library:
     Created by passing EITHER:
         - A url to a json file in the cloud
         - A path to a local json file
+        - A dict with the necessary format
     ---
     File must follow a specific format: It must be a dict
     of dicts, where each sub-dict has keys 'u', 'r', 'b', 'p'.
@@ -49,8 +50,12 @@ class Library:
             return string
         
     def set(self, url):
+        # Dict
+        if type(url) == dict:
+            self.data = url
+
         # Online library
-        if url.startswith("https"):
+        elif url.startswith("https"):
             try:
                 self.data = dict(requests.get(url).json())
             except Exception as e:
@@ -135,7 +140,7 @@ class Library:
         
         if not file:
             if source in self.sources.keys():
-                self.sources[source].display_datasets()
+                self.sources[source].display_datasets(header=True)
                 return None
             if "main" in self.sources:
                 # Shorthand: access contents of 'main' datasource

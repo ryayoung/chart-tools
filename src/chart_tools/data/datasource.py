@@ -35,9 +35,12 @@ class DataSource(Source):
         else:
             self.name = repo
 
-        # OPTION 1: url as single positional
+        # OPTION 1: url as positional in user, or url kwarg
         if "github.com/" in str(user) or url:
-            self.init_from_url(user, path)
+            if url:
+                self.init_from_url(url, path)
+            else:
+                self.init_from_url(user, path)
 
         # OPTION 2
         elif user and repo and branch:
@@ -113,7 +116,7 @@ class DataSource(Source):
         return res['default_branch']
 
 
-    def display_datasets(self, header=True, trunc=1000):
+    def display_datasets(self, header=False, trunc=1000):
         """
         Display datasets inside source, truncated if asked.
         Format differently if there are sub-directories.
@@ -150,11 +153,17 @@ class DataSource(Source):
             print(f"      ({len(self.datasets)-count} more files in {name})")
     
 
-    def display_subdirs(self):
-        print(f"Sub-directories in '{self.user}/{self.repo}/{self.path}'")
-        print("---------------------------------------")
-        print("  ", end="")
-        print(*self.subdirs, sep="\n  ")
+    def display_subdirs(self, header=False):
+        if header:
+            if self.name != None:
+                print(f"Datasets for '{self.name}':")
+            else:
+                print(f"Sub-directories in '{self.user}/{self.repo}/{self.path}'")
+            print("---------------------------------------")
+            print("  ", end="")
+            print(*self.subdirs, sep="\n  ")
+        else:
+        print(*self.subdirs, sep="\n")
 
 
     def __repr__(self):
