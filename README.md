@@ -47,4 +47,4 @@ ct.load_data() # outputs available pre-defined data sources
 
 <img width="450" alt="Screen Shot 2022-04-24 at 3 02 22 AM" src="https://user-images.githubusercontent.com/90723578/164968825-2679e57e-4df1-44fd-9465-6cca60c211ce.png">
 
-<img width="600" alt="Screen Shot 2022-04-24 at 3 09 06 AM" src="https://user-images.githubusercontent.com/90723578/164969119-f7950d5a-f40c-4a6e-b6d6-cc1067dec474.png">
+<img width="1000" alt="Screen Shot 2022-04-24 at 3 09 06 AM" src="https://user-images.githubusercontent.com/90723578/164969119-f7950d5a-f40c-4a6e-b6d6-cc1067dec474.png">
