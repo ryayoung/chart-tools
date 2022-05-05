@@ -16,7 +16,7 @@ Dynamically sized marks make large heatmaps like the one below far easier to rea
 import chart_tools as ct
 df = ct.load_data('ames_mini')
 ct.set_style(15)
-ct.superheat(df.corr(), half_mask=True, mark_scale=8, grid=False);
+ct.superheat(df.corr(), half_mask=False, mark_scale=8, grid=False);
 ```
 
 <img width="1000" alt="Screen Shot 2022-04-24 at 3 09 06 AM" src="https://user-images.githubusercontent.com/90723578/164969119-f7950d5a-f40c-4a6e-b6d6-cc1067dec474.png">
