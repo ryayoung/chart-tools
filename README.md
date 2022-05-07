@@ -1,4 +1,4 @@
-<h1> chart-tools     <a href="https://pypi.org/project/chart-tools/" alt="Version"> <img src="https://img.shields.io/pypi/v/chart-tools.svg" /></a> </h1>
+<h1> chart-tools &nbsp;&nbsp;&nbsp; <a href="https://pypi.org/project/chart-tools/" alt="Version"> <img src="https://img.shields.io/pypi/v/chart-tools.svg" /></a> </h1>
 
 <!-- **View Full Documentation [Here](https://github.com/ryayoung/chart-tools)** -->
 
