@@ -1,6 +1,9 @@
 from chart_tools.data.source import Source
 import requests
 
+# TODO:
+# DataSource version of .load() should work like the
+# load_data() in Library, to explore file structure
 
 class DataSource(Source):
     """

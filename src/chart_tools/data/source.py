@@ -8,6 +8,10 @@ from hashlib import md5
 
 from chart_tools.data.dfcache import DFCache
 
+# TODO:
+# load() function won't find base filenames when subdirectories
+# go more than 1 layer deep
+
 
 def check_internet():
     """ Don't do internet stuf if no internet """
