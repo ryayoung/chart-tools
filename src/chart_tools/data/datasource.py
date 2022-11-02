@@ -166,7 +166,7 @@ class DataSource(Source):
             print("  ", end="")
             print(*self.subdirs, sep="\n  ")
         else:
-        print(*self.subdirs, sep="\n")
+            print(*self.subdirs, sep="\n")
 
 
     def __repr__(self):

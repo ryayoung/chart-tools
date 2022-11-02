@@ -28,6 +28,7 @@ def superheat(
         grid=True,
         palette=None,
         size=None,
+        title_fontsize=None,
         marker='s',
         bar_ticks=5,
         n_colors=128,
@@ -43,15 +44,24 @@ def superheat(
 
     # Data
     dfc = corr.copy()
+    # Must fill null values with 0. Having any nulls in a df.corr() is
+    # rare, and it's difficult for the user to fix the problem. This only
+    # occurs when one of the input variables has the same numeric value for
+    # the entire column. When that happens, the resulting correlation matrix
+    # will have an entirely null column, AND an entirely null row. Calling
+    # dropna() on either axis would delete all the data. So our only option
+    # is to remove the variable from the matrix by iteration (slow, but better)
+    # or just filling nulls with 0.
+    dfc = dfc.fillna(0)
 
     # Remove vars whose absolute mean corr is below threshold
     if thresh_avg:
-        dfc = sig_corr(corr, thresh_avg)
+        dfc = sig_corr(dfc, thresh_avg)
     
     # Mask insignificant correlations, if requested
     if thresh_mask:
         dfc = dfc.mask(abs(dfc) < thresh_mask).fillna(0)
-
+    
     # Reindex before masking, since reindexing will happen later on if we don't
     dfc = dfc.reindex(sorted(dfc.columns), axis=1)
     if half_mask:
@@ -64,6 +74,8 @@ def superheat(
             # Remove self-self correlations
             dfc.loc[c,c] = 0.0
 
+    num_vars = len(dfc.columns)
+
     # Unpivot df to get paired x & y arrays
     dfc = pd.melt(dfc.reset_index(), id_vars='index')
     dfc.columns = ['x', 'y', 'value']
@@ -75,7 +87,13 @@ def superheat(
     fig, ax = plt.subplots()
     plot_grid = plt.GridSpec(1,30,hspace=0.2,wspace=0.1)
     ax = plt.subplot(plot_grid[:,:-1])
-    ax.set_title(title)
+    # Title font size
+    if title_fontsize:
+        title_fsize = title_fontsize
+    else:
+        # Set title fontsize programmatically if no param given
+        title_fsize = int(18 + num_vars / 2)
+    ax.set_title(title, fontsize=title_fsize)
 
     # Color
     if palette == None:
